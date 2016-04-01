@@ -128,8 +128,9 @@ def show_staff_at_library(selected)
 	if l == []
 		puts "\nNo current staff members at this library\n"
 	else
+		puts "\n"
 		l.each do |staff_member|
-			puts "\n#{Library.find_by_id(selected).branch_name} currently employs #{staff_member.name}"
+			puts "#{Library.find_by_id(selected).branch_name} currently employs #{staff_member.name}"
 		end
 	end
 end
@@ -143,7 +144,7 @@ end
 #
 #returns select
 def select_choice_library
-	puts "\n1 Add a Library\n2 Examine a Library\n3 Edit a Library\n4 Remove a Library\n5 View All Libraries\n6 View Staff Members\n0 Return to Main Menu"
+	puts "\n1 Add a Library\n2 Information on a Library\n3 Edit a Library\n4 Remove a Library\n5 View All Libraries\n6 View Staff Members\n0 Return to Main Menu"
 	select = make_selection
 
 	while select != "1" && select != "2" && select != "3" && select != "4" && select != "5" && select != "6" && select != "0"
@@ -155,7 +156,7 @@ def select_choice_library
 		add_library
 
 	elsif select == "2"
-		puts "\nTo examine a library please enter it's ID #\n"
+		puts "\nTo get information about a library please enter it's ID #\n"
 		show_all_libraries
 		select = make_selection.to_i
 		select = verify_library_exists(select)
@@ -179,7 +180,7 @@ def select_choice_library
 		show_all_libraries
 
 	elsif select == "6"
-		puts "\nTo see employees at a library please enter it's ID\n"
+		puts "\nTo see employees at a library please enter it's ID #\n"
 		show_all_libraries
 		select = make_selection.to_i
 		select = verify_library_exists(select)
@@ -192,6 +193,236 @@ def select_choice_library
 	end
 	select		
 end
+
+
+
+#edit_book method allows the user to edit a book that has been selected
+#
+#+selected - integer: identifies the book that has been selected
+#
+def edit_book(selected)
+	edit_book_title(selected)
+	edit_book_author(selected)
+	edit_book_isbn(selected)
+end
+
+#edit_book_title method edits book title
+# 
+#+selected - integer:  identifies the selected book
+#
+def edit_book_title(selected)
+	b = Book.find(selected)
+	print "\nTo edit the book title please enter here: "
+	title = gets.chomp
+	b.update_attributes(title: title)
+end
+
+#edit_book_author method edits book author
+#
+#+selected - integer: identifes the selected book
+#
+def edit_book_author(selected)
+	b = Book.find(selected)
+	print "To edit the book author please enter here: "
+	author = gets.chomp
+	b.update_attributes(author: author)
+end
+
+#edit_book_isbn method edits book isbm
+#
+#+selected - integer: identifes the selected book
+#
+def edit_book_isbn(selected)
+	b = Book.find(selected)
+	print "To edit the book isbn please enter here: "
+	isbn = gets.chomp
+	b.update_attributes(isbn: isbn)	
+end
+
+#edit_book_library_id method allows a user to change the home library
+#     for a book
+#
+def edit_book_library_id
+	select = make_selection.to_i
+	select = verify_book_exists(select)
+	print "\nWhich library would you like to call home for this book "
+	library_id = gets.chomp.to_i
+	library_id = verify_library_exists(library_id)
+	b = Book.find(select)
+	b.update_attributes(library_id: library_id)
+end
+
+
+#remove_book method closes a book and removes it's record
+#
+#+selected - integer: identifies the selected book
+#
+def remove_book(selected)
+	b = Book.find(selected)
+	b.destroy
+end
+
+
+
+
+
+#display_book method shows information about a selected book
+#
+#+selected - integer: used to identify which book to display info
+def display_book(selected)
+	b = Book.find(selected)
+	puts "\n#{b.title} written by #{b.author}  ISBN #{b.isbn}"
+	if b.patron_id.nil?
+		puts "#{b.title} is available at #{Library.find_by_id(b.library_id).branch_name}"
+	else 
+		puts "#{Patron.find_by_id(b.patron_id).name} currently has this book checked out"
+	end
+end
+
+
+#show_all_books method shows all the books
+#
+#
+#
+#
+def show_all_books
+		puts "\nAll Books\n"
+		Book.all.each do  |book|
+			puts "#{book.id}  #{book.title}"
+		end
+end
+
+#verify_book_exists method verifies the book selected exists
+#
+#+selected - integer: identifies the book selected
+#
+#seleceted is an actual existing book that is returned  
+#credit kyle
+def verify_book_exists(selected)
+	while Book.find_by_id(selected).nil?
+		puts "\nNo books identified as entered\n"
+		show_all_books
+		selected = make_selection.to_i
+	end
+	selected
+end
+
+
+#add_book method gathers information from user to create a new book
+#
+#
+#
+def add_book
+	puts "\nTo add a new book please enter the following requested information:\n"
+	print "Book Title "
+	title = gets.chomp
+	print "Book Author "
+	author = gets.chomp
+	print "Book ISBN "
+	isbn = gets.chomp
+	print "Book Home Library "
+	library_id = gets.chomp.to_i
+	library_id = verify_library_exists(library_id)
+	Book.create(title: title, author: author, isbn: isbn, library_id: library_id)
+end
+
+#check_out_book method allows user to check out a book
+#
+#
+def check_out_book
+	select = make_selection.to_i
+	select = verify_book_exists(select)
+	b = Book.find(select)
+	if b.patron_id.nil?
+		puts "\nPlease select patron that would like to check out book\n"
+	#	show_all_patrons
+		select = make_selection.to_i
+	#	select = verify_patron_exists(select)
+		b.update_attributes(patron_id: select)
+	else
+		puts "\nThis book is already checked out\n"
+	end
+end	
+
+#return_book method allows user to put a book in circulation
+#
+#
+def return_book
+		select = make_selection.to_i
+		select = verify_book_exists(select)
+		b = Book.find(select)
+		patron_id = nil
+		b.update_attributes(patron_id: patron_id)
+end	
+
+
+#select_choice_book method allows the user to select 
+#   a chice from a menu in the book directory
+#
+#
+#
+#returns select
+def select_choice_book
+	puts "\n1 Add a Book\n2 Information on a Book\n3 Edit a Book\n4 Remove a Book\n5 View All Books\n6 Switch Home Library for Book\n7 Check Out Book\n8 Return a Book\n0 Return to Main Menu"
+	select = make_selection
+
+	while select != "1" && select != "2" && select != "3" && select != "4" && select != "5" && select != "6" && select != "7" && select != "8" && select != "0"
+		puts "\nInvalid choice selected\n"		 		
+		select = make_selection
+	end
+
+	if select == "1"
+		add_book
+
+	elsif select == "2"
+		puts "\nTo get information about a book please enter it's ID #\n"
+		show_all_books
+		select = make_selection.to_i
+		select = verify_book_exists(select)
+		display_book(select)
+
+	elsif select == "3"
+		puts "\nTo edit a book please enter it's ID #\n"
+		show_all_books
+		select = make_selection.to_i
+		select = verify_book_exists(select)
+	  edit_book(select)
+
+	elsif select == "4"
+		puts "\nTo remove a book please enter it's ID #\n"
+		show_all_books
+		select = make_selection.to_i
+		select = verify_book_exists(select)
+	  remove_book(select)
+
+	elsif select == "5"
+		show_all_books
+
+	elsif select == "6"
+		puts "\nTo switch home library of a book please enter it's ID #\n"
+		show_all_books
+		edit_book_library_id
+
+
+	elsif select == "7"
+		puts "\nTo check out a book please enter it's ID #\n"
+		show_all_books
+		check_out_book
+
+
+	elsif select == "8"
+		puts "\nTo return a book please enter it's ID #\n"
+		show_all_books
+		return_book
+		puts "\nBook returned"
+
+	elsif select == "0"
+		puts "\nNow entering main menu\n"
+
+	end
+	select		
+end
+
 
 #main_menu method allows a user to select between 5 different
 #   options - library, patron, book, staff member, and exit
@@ -218,7 +449,10 @@ def main_menu
 
 
 	elsif select == "3"
-#   books
+		book_choice = "9"
+		while book_choice != "0"
+			book_choice = select_choice_book
+		end
 
 
 	elsif select == "4"

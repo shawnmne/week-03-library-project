@@ -14,7 +14,7 @@ require_relative "lib/patron.rb"
 #
 def make_selection
 	print "\nPlease make a selection "
-	gets.chomp.to_i
+	gets.chomp
 end
 
 #display_library method shows information about a selected library
@@ -31,7 +31,6 @@ end
 #
 #
 def show_all_libraries
-		binding.pry
 		puts "\nAll Libraries\n"
 		Library.all.each do  |library|
 			puts "#{library.id}  #{library.branch_name}"
@@ -59,7 +58,7 @@ end
 #
 def edit_library(selected)
 	edit_library_name(selected)
-	edit_library_addrss(selected)
+	edit_library_address(selected)
 	edit_library_phone(selected)
 end
 
@@ -105,6 +104,38 @@ def remove_library(selected)
 	l.destroy
 end
 
+#verify_library_exists method verifies the library selected exists
+#
+#+selected - integer: identifies the library selected
+#
+#seleceted is an actual existing library that is returned  
+#credit kyle
+def verify_library_exists(selected)
+	while Library.find_by_id(selected).nil?
+		puts "\nNo libraries identified as entered\n"
+		show_all_libraries
+		selected = make_selection.to_i
+	end
+	selected
+end
+
+#show_staff_at_library method shows the staff currently at a library
+#
+#+selected - integer: identifes the library selected
+#
+def show_staff_at_library(selected)
+	l = Library.find_by_id(selected).staff_members
+	if l == []
+		puts "\nNo current staff members at this library\n"
+	else
+		l.each do |staff_member|
+			puts "\n#{Library.find_by_id(selected).branch_name} currently employs #{staff_member.name}"
+		end
+	end
+end
+
+
+
 #select_choice_library method allows the user to select 
 #   a chice from a menu in the library directory
 #
@@ -115,39 +146,48 @@ def select_choice_library
 	puts "\n1 Add a Library\n2 Examine a Library\n3 Edit a Library\n4 Remove a Library\n5 View All Libraries\n6 View Staff Members\n0 Return to Main Menu"
 	select = make_selection
 
-	if select == 1
+	while select != "1" && select != "2" && select != "3" && select != "4" && select != "5" && select != "6" && select != "0"
+		puts "\nInvalid choice selected\n"		 		
+		select = make_selection
+	end
+
+	if select == "1"
 		add_library
 
-	elsif select == 2
+	elsif select == "2"
 		puts "\nTo examine a library please enter it's ID #\n"
 		show_all_libraries
-		select = make_selection
+		select = make_selection.to_i
+		select = verify_library_exists(select)
 		display_library(select)
 
-	elsif select == 3
+	elsif select == "3"
 		puts "\nTo edit a library please enter it's ID #\n"
 		show_all_libraries
-		select = make_selection
+		select = make_selection.to_i
+		select = verify_library_exists(select)
 		edit_library(select)
 
-	elsif select == 4
+	elsif select == "4"
 		puts "\nTo remove a library please enter it's ID #\n"
 		show_all_libraries
-		select = make_selection
+		select = make_selection.to_i
+		select = verify_library_exists(select)
 		remove_library(select)
 
-	elsif select == 5
+	elsif select == "5"
 		show_all_libraries
 
-	elsif select == 6
-		#view library staff
-		puts "staff"
+	elsif select == "6"
+		puts "\nTo see employees at a library please enter it's ID\n"
+		show_all_libraries
+		select = make_selection.to_i
+		select = verify_library_exists(select)
+		show_staff_at_library(select)
 
-	elsif select == 0
+
+	elsif select == "0"
 		puts "\nNow entering main menu\n"
-
-	else
-		puts "\nInvalid choice selected\n"		 		
 
 	end
 	select		
@@ -162,28 +202,31 @@ def main_menu
 	puts "\n1 Library\n2 Staff Members\n3 Books\n4 Patrons\n0 Exit\n"
 	select = make_selection
 
-	if select == 1
-		library_choice = 9
-		while library_choice != 0
+	while select != "1" && select != "2" && select != "3" && select != "4" && select != "0"
+		puts "\nInvalid choice selected\n"		 		
+		select = make_selection
+	end
+
+	if select == "1"
+		library_choice = "9"
+		while library_choice != "0"
 			library_choice = select_choice_library
 		end
 
- 	elsif select == 2
+ 	elsif select == "2"
 # 	staff member
 
 
-	elsif select == 3
+	elsif select == "3"
 #   books
 
 
-	elsif select == 4
+	elsif select == "4"
 #   patron
 
 
-	elsif select == 0
-		puts "\nGoodbye"
-	else
-		puts "\nInvalid choice selected\n"		 		
+	elsif select == "0"
+		puts "\nGoodbye"		 		
 	end
 	select 
 end
@@ -193,9 +236,9 @@ def main
 	puts "\nWelcome to the Library Interface\n"
 	puts "\nWhat would you like to do?\n"
 
-	choice = 9
+	choice = "9"
 
-	while choice != 0
+	while choice != "0"
 		choice = main_menu
 	end	
 end

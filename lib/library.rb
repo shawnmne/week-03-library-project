@@ -6,6 +6,10 @@
 
 class Library < ActiveRecord::Base
 
+	validates :branch_name, presence: true
+	validates :address, presence: true
+	validates :phone, presence: true
+
 	has_many :staff_members
 	has_many :books
 

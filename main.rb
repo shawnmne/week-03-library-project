@@ -335,9 +335,9 @@ def check_out_book
 	b = Book.find(select)
 	if b.patron_id.nil?
 		puts "\nPlease select patron that would like to check out book\n"
-	#	show_all_patrons
+		show_all_patrons
 		select = make_selection.to_i
-	#	select = verify_patron_exists(select)
+		select = verify_patron_exists(select)
 		b.update_attributes(patron_id: select)
 	else
 		puts "\nThis book is already checked out\n"
@@ -423,6 +423,177 @@ def select_choice_book
 	select		
 end
 
+#show_all_patronss method shows all the patrons
+#
+#
+#
+#
+def show_all_patrons
+		puts "\nAll Patrons\n"
+		Patron.all.each do  |patron|
+			puts "#{patron.id}  #{patron.name}"
+		end
+end
+
+#verify_patron_exists method verifies the patron selected exists
+#
+#+selected - integer: identifies the patron selected
+#
+#seleceted is an actual existing patron that is returned  
+#credit kyle
+def verify_patron_exists(selected)
+	while Patron.find_by_id(selected).nil?
+		puts "\nNo patrons identified as entered\n"
+		show_all_patrons
+		selected = make_selection.to_i
+	end
+	selected
+end
+
+#add_patron method gathers information from user to create a new patron
+#
+#
+#
+def add_patron
+	puts "\nTo add a new patron please enter the following requested information:\n"
+	print "Name "
+	name = gets.chomp
+	print "Email Address "
+	email_address = gets.chomp
+	Patron.create(name: name, email_address: email_address)
+end
+
+#display_patron method shows information about a selected patron
+#
+#+selected - integer: used to identify which patron to display info
+def display_patron(selected)
+	p = Patron.find(selected)
+	puts "\n#{p.name}  #{p.email_address}"
+end
+
+
+#edit_patron method allows the user to edit a patron that has been selected
+#
+#+selected - integer: identifies the patron that has been selected
+#
+def edit_patron(selected)
+	edit_patron_name(selected)
+	edit_patron_email_address(selected)
+end
+
+#edit_patron_name method edits patron name
+# 
+#+selected - integer:  identifies the selected patron
+#
+def edit_patron_name(selected)
+	p = Patron.find(selected)
+	print "\nTo edit the patron name please enter here: "
+	name = gets.chomp
+	p.update_attributes(name: name)
+end
+
+#edit_patron_email_adress method edits patron email address
+#
+#+selected - integer: identifes the selected patron
+#
+def edit_patron_email_address(selected)
+	p = Patron.find(selected)
+	print "To edit the patron email address please enter here: "
+	email_address = gets.chomp
+	p.update_attributes(email_address: email_address)
+end
+
+
+
+#remove_patron method removes a patron
+#
+#+selected - integer: identifies the selected patron
+#
+def remove_patron(selected)
+	p = Patron.find(selected)
+	p.destroy
+end
+
+
+#show_books_checked_by_patron method shows the books currently
+#    checked out by a patron
+#
+#+selected - integer: identifes the patron selected
+#
+def show_books_checked_by_patron(selected)
+	p = Patron.find_by_id(selected).books
+	if p == []
+		puts "\nNo books currently checked out to #{Patron.find_by_id(selected).name}\n"
+	else
+		puts "\n"
+		p.each do |book|
+			puts "#{Patron.find_by_id(selected).name} currently has #{book.title} checked out."
+		end
+	end
+end
+
+
+#select_choice_patron method allows the user to select 
+#   a choice from a menu in the patron directory
+#
+#
+#
+#returns select
+def select_choice_patron
+	puts "\n1 Add a Patron\n2 Information on a Patron\n3 Edit a Patron\n4 Remove a Patron\n5 View All Patrons\n6 View All Books a Patron has Checked Out\n0 Return to Main Menu"
+	select = make_selection
+
+	while select != "1" && select != "2" && select != "3" && select != "4" && select != "5" && select != "6" && select != "0"
+		puts "\nInvalid choice selected\n"		 		
+		select = make_selection
+	end
+
+	if select == "1"
+		add_patron
+
+	elsif select == "2"
+		puts "\nTo get information about a patron please enter their ID #\n"
+		show_all_patrons
+		select = make_selection.to_i
+		select = verify_patron_exists(select)
+		display_patron(select)
+
+	elsif select == "3"
+		puts "\nTo edit a patron please enter their ID #\n"
+		show_all_patrons
+		select = make_selection.to_i
+		select = verify_patron_exists(select)
+		edit_patron(select)
+
+	elsif select == "4"
+		puts "\nTo remove a patron please enter their ID #\n"
+		show_all_patrons
+		select = make_selection.to_i
+		select = verify_patron_exists(select)
+		remove_patron(select)
+
+	elsif select == "5"
+		show_all_patrons
+
+	elsif select == "6"
+		puts "\nTo see what books a patron has checked out please enter their ID #\n"
+		show_all_patrons
+		select = make_selection.to_i
+		select = verify_patron_exists(select)
+		show_books_checked_by_patron(select)
+
+	elsif select == "0"
+		puts "\nNow entering main menu\n"
+
+	end
+	select		
+end
+
+
+
+
+
+
 
 #main_menu method allows a user to select between 5 different
 #   options - library, patron, book, staff member, and exit
@@ -456,7 +627,10 @@ def main_menu
 
 
 	elsif select == "4"
-#   patron
+		patron_choice = "9"
+		while patron_choice != "0"
+			patron_choice = select_choice_patron
+		end
 
 
 	elsif select == "0"

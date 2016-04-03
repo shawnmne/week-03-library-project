@@ -95,13 +95,35 @@ def edit_library_phone(selected)
 	l.update_attributes(phone: phone)	
 end
 
-#remove_library method closes a library and removes it's record
+#remove_library method closes a library by removing it's record
+#   it also verifies that no oprhan keys are left in the book and staff_member tables
 #
 #+selected - integer: identifies the selected library
 #
 def remove_library(selected)
 	l = Library.find(selected)
+	removed = l.id
 	l.destroy
+	Book.all.each do |book|
+		if book.library_id == removed
+			puts "\nDue to branch closure '#{book.title}' needs a new home branch."
+			show_all_libraries
+			selected = make_selection.to_i
+			selected = verify_library_exists(selected)
+			book.update_attributes(library_id: selected)
+		end
+	end
+	StaffMember.all.each do |staff|
+		if staff.library_id == removed
+			puts "\nDue to #{l.branch_name} closure employee #{staff.name} needs to be reassigned"
+			show_all_libraries
+			selected = make_selection.to_i
+			selected = verify_library_exists(selected)
+			staff.update_attributes(library_id: selected)
+		end
+	end
+
+
 end
 
 #verify_library_exists method verifies the library selected exists
@@ -170,7 +192,7 @@ def select_choice_library
 		edit_library(select)
 
 	elsif select == "4"
-		puts "\nTo remove a library please enter it's ID #\n"
+		puts "\nTo close a library please enter it's ID #\n"
 		show_all_libraries
 		select = make_selection.to_i
 		select = verify_library_exists(select)
@@ -242,9 +264,8 @@ end
 #edit_book_library_id method allows a user to change the home library
 #     for a book
 #
-def edit_book_library_id
-	select = make_selection.to_i
-	select = verify_book_exists(select)
+def edit_book_library_id(select)
+	show_all_libraries
 	print "\nWhich library would you like to call home for this book "
 	library_id = gets.chomp.to_i
 	library_id = verify_library_exists(library_id)
@@ -401,7 +422,9 @@ def select_choice_book
 	elsif select == "6"
 		puts "\nTo switch home library of a book please enter it's ID #\n"
 		show_all_books
-		edit_book_library_id
+		select = make_selection.to_i
+		select = verify_book_exists(select)
+		edit_book_library_id(select)
 
 
 	elsif select == "7"
@@ -505,12 +528,17 @@ end
 
 
 
-#remove_patron method removes a patron
+#remove_patron method removes a patron and it's orphan keys
 #
 #+selected - integer: identifies the selected patron
 #
 def remove_patron(selected)
 	p = Patron.find(selected)
+	Book.all.each do |b|
+		if b.patron_id = p.id
+			b.update_attributes(patron_id: nil)
+		end
+	end	
 	p.destroy
 end
 
@@ -589,10 +617,178 @@ def select_choice_patron
 	select		
 end
 
+#show_all_staff_members method shows all the staff members
+#
+#
+#
+#
+def show_all_staff_members
+		puts "\nAll Staff Members\n"
+		StaffMember.all.each do  |staff_member|
+			puts "#{staff_member.id}  #{staff_member.name}"
+		end
+end
+
+#add_staff_member method gathers information from user to create a new staff member
+#
+#
+#
+def add_staff_member
+	puts "\nTo add a new staff member please enter the following requested information:\n"
+	print "Name "
+	name = gets.chomp
+	print "Email Address "
+	email_address = gets.chomp
+	print "Library branch assigned to "
+	library_id = gets.chomp.to_i
+	library_id = verify_library_exists(library_id)
+	StaffMember.create(name: name, email_address: email_address, 
+			library_id: library_id)
+end
+
+
+#verify_staff_member_exists method verifies the staff member selected exists
+#
+#+selected - integer: identifies the staff member selected
+#
+#seleceted is an actual existing staff member that is returned  
+#credit kyle
+def verify_staff_member_exists(selected)
+	while StaffMember.find_by_id(selected).nil?
+		puts "\nNo staff members identified as entered\n"
+		show_all_staff_members
+		selected = make_selection.to_i
+	end
+	selected
+end
 
 
 
+#display_staff_member method shows information about a selected staff member
+#
+#+selected - integer: used to identify which staff member to display info
+def display_staff_member(selected)
+	s = StaffMember.find(selected)
+	if Library.find_by_id(s.library_id).nil?
+		puts "This employee is no longer assigned to a library."
+		reassign_staff_member(s.id)
+	else
+		puts "\n#{s.name}  #{s.email_address} employeed at #{Library.find_by_id(s.library_id).branch_name}"
+	end
+end
 
+#edit_staff_member method allows the user to edit a staff member that has been selected
+#
+#+selected - integer: identifies the staff member that has been selected
+#
+def edit_staff_member(selected)
+	edit_staff_member_name(selected)
+	edit_staff_member_email_address(selected)
+end
+
+#edit_staff_member_name method edits staff member name
+# 
+#+selected - integer:  identifies the selected staff member
+#
+def edit_staff_member_name(selected)
+	s = StaffMember.find(selected)
+	print "\nTo edit the staff member name please enter here: "
+	name = gets.chomp
+	s.update_attributes(name: name)
+end
+
+#edit_staff_member_email_adress method edits staff member email address
+#
+#+selected - integer: identifes the selected staff member
+#
+def edit_staff_member_email_address(selected)
+	s = StaffMember.find(selected)
+	print "To edit the staff member email address please enter here: "
+	email_address = gets.chomp
+	s.update_attributes(email_address: email_address)
+end
+
+
+
+#remove_staff_member method removes a staff member
+#
+#+selected - integer: identifies the selected staff member
+#
+def remove_staff_member(selected)
+	s = StaffMember.find(selected)
+	s.destroy
+end
+
+#reassign_staff_member method allows a user to reassign a staff member to a
+#    different library
+#
+#+select - integer: identifies the selected staff member
+#
+def reassign_staff_member(select)
+	s = StaffMember.find(select)
+	puts "\nPlease select library that you would like to assign the staff member\n"
+	show_all_libraries
+	select = make_selection.to_i
+	select = verify_library_exists(select)
+	s.update_attributes(library_id: select)
+end
+
+#select_choice_staff_member method allows the user to select 
+#   a choice from a menu in the patron directory
+#
+#
+#
+#returns select
+def select_choice_staff_member
+	puts "\n1 Add a Staff Member\n2 Information on a Staff Member\n3 Edit a Staff Member\n4 Remove a Staff Member\n5 View All Staff Members\n6 Reassign a Staff Member to a Different Branch\n0 Return to Main Menu"
+	select = make_selection
+
+	while select != "1" && select != "2" && select != "3" && select != "4" && select != "5" && select != "6" && select != "0"
+		puts "\nInvalid choice selected\n"		 		
+		select = make_selection
+	end
+
+	if select == "1"
+		add_staff_member
+
+	elsif select == "2"
+		puts "\nTo get information about a staff member please enter their ID #\n"
+		show_all_staff_members
+		select = make_selection.to_i
+		select = verify_staff_member_exists(select)
+		display_staff_member(select)
+
+	elsif select == "3"
+		puts "\nTo edit a  please enter their ID #\n"
+		show_all_staff_members
+		select = make_selection.to_i
+		select = verify_staff_member_exists(select)
+		edit_staff_member(select)
+
+	elsif select == "4"
+		puts "\nTo remove a staff member please enter their ID #\n"
+		show_all_staff_members
+		select = make_selection.to_i
+		select = verify_staff_member_exists(select)
+		remove_staff_member(select)
+
+	elsif select == "5"
+		show_all_staff_members
+
+	elsif select == "6"
+		puts "\nTo reassign an employee to a different branch please enter their ID #\n"
+		show_all_staff_members
+		select = make_selection.to_i
+		select = verify_staff_member_exists(select)
+		reassign_staff_member(select)
+
+
+	elsif select == "0"
+		puts "\nNow entering main menu\n"
+
+	end
+	select		
+end
 
 
 #main_menu method allows a user to select between 5 different
@@ -616,7 +812,10 @@ def main_menu
 		end
 
  	elsif select == "2"
-# 	staff member
+		staff_member_choice = "9"
+		while staff_member_choice != "0"
+			staff_member_choice = select_choice_staff_member
+		end
 
 
 	elsif select == "3"
